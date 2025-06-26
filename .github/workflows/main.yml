@@ -38,10 +38,16 @@ jobs:
             -Dsonar.host.url=${{ env.SONAR_HOST_URL }} \
             -Dsonar.login=${{ env.SONAR_TOKEN }}
 
-      - name: 🐳 Build Docker image
-        run: docker build -t micro/product:1.0.0 .
+      - name: 🐳 Build Docker image (desde carpeta docker/)
+        run: docker build -t micro/product:1.0.0 -f docker/Dockerfile .
 
       - name: 🚀 Run Docker container
         run: |
           docker rm -f micro-product || true
-          docker run -d --name micro-product -p 8086:8080 micro/product:1.0.0
+          docker run -d \
+            --name micro-product \
+            -p 8086:8080 \
+            micro/product:1.0.0
+
+      - name: 📄 Ver últimos logs
+        run: docker logs --tail 100 micro-product
