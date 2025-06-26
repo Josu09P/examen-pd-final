@@ -1,4 +1,4 @@
-name: CI - Build + Análisis SonarQube
+name: CI - Build + Sonar + Docker
 
 on:
   push:
@@ -12,23 +12,23 @@ env:
   JAVA_VERSION: '17'
 
 jobs:
-  build-and-analyze:
+  build-test-analyze-deploy:
     runs-on: self-hosted
 
     steps:
-      - name: 📥 Clonar código del repositorio
+      - name: 📥 Clonar código
         uses: actions/checkout@v4
 
-      - name: ☕ Configurar Java
+      - name: ☕ Java setup
         uses: actions/setup-java@v4
         with:
           java-version: ${{ env.JAVA_VERSION }}
           distribution: 'temurin'
 
-      - name: 📦 Compilar sin tests
+      - name: 📦 Compilar JAR (sin tests)
         run: mvn -B clean package -DskipTests
 
-      - name: 🔍 Analizar con SonarQube
+      - name: 🔍 Análisis Sonar
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
         run: |
@@ -37,3 +37,11 @@ jobs:
             -Dsonar.projectName="Micro Product App" \
             -Dsonar.host.url=${{ env.SONAR_HOST_URL }} \
             -Dsonar.login=${{ env.SONAR_TOKEN }}
+
+      - name: 🐳 Build Docker image
+        run: docker build -t micro/product:1.0.0 .
+
+      - name: 🚀 Run Docker container
+        run: |
+          docker rm -f micro-product || true
+          docker run -d --name micro-product -p 8086:8080 micro/product:1.0.0
